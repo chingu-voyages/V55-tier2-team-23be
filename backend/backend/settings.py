@@ -24,7 +24,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework',
 
-    'users',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -95,11 +95,11 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'core.CustomUser'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'users.auth_backends.CookieJWTAuthentication',
+        'core.auth_backends.CookieJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
