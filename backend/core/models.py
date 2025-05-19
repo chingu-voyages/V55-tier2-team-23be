@@ -45,3 +45,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f'{self.email} - {self.username}'
     
+
+class Tag(models.Model):
+    external_id = models.CharField(max_length=255, unique=True)
+    tag = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.tag}'
+    
+class Resource(models.Model):
+    external_id = models.CharField(max_length=255, unique=True)
+    author = models.CharField(max_length=255)
+    name = models.CharField(max_length=255)
+    url = models.URLField(max_length=1500)
+    created_at = models.DateTimeField(null=True, blank=True)
+    tags = models.ManyToManyField(Tag, related_name='resources')
+
+    def __str__(self):
+        return f'{self.author} - {self.name}'    

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import CustomUser
+from core.models import CustomUser, Resource
 from django.contrib.auth import get_user_model, authenticate
 
 User = get_user_model()
@@ -10,7 +10,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ["email", "username", "password", 'password2']
+        fields = ["email", "username", "password", "password2"]
         extra_kwargs = {"password": {"write_only": True}}
 
     def validate(self, data):
@@ -38,13 +38,21 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, data):
         user = authenticate(
-            request=self.context.get('request'),
-            email=data['email'],
-            password=data['password']
+            request=self.context.get("request"),
+            email=data["email"],
+            password=data["password"],
         )
 
         if not user:
             raise serializers.ValidationError("Invalid password or email!")
-        
-        data['user'] = user
+
+        data["user"] = user
         return data
+
+
+class ResourceSerializer(serializers.ModelSerializer):
+    tags = serializers.SlugRelatedField(many=True, read_only=True, slug_field="tag")
+
+    class Meta:
+        model = Resource
+        fields = "__all__"
