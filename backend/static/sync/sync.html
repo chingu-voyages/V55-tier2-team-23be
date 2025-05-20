@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sync Data</title>
+</head>
+<body>
+    <h2>Manual Data Sync</h2>
+    <button onclick="syncData()">Sync Resources and Tags</button>
+
+    <script>
+    async function syncData() {
+        try {
+            const tagRes = await fetch("https://seshatbe.up.railway.app/tags/");
+            const resRes = await fetch("https://seshatbe.up.railway.app/resources/");
+
+            if (!tagRes.ok || !resRes.ok) {
+                alert("Failed to fetch external data");
+                return;
+            }
+
+            const tags = await tagRes.json();
+            const resources = await resRes.json();
+
+            const uploadRes = await fetch("/api/upload-data/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ tags, resources })
+            });
+
+            if (uploadRes.ok) {
+                alert("Data synced successfully!");
+            } else {
+                alert("Failed to upload data to server.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("An error occurred during sync.");
+        }
+    }
+    </script>
+</body>
+</html>

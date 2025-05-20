@@ -9,8 +9,10 @@ from .views import (
     LoginAPIView,
     ResourcesListAPIView,
     TagListAPIView,
-    trigger_sync,
+    upload_data,
 )
+from django.contrib.staticfiles.views import serve
+
 
 urlpatterns = [
     path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain"),
@@ -20,5 +22,9 @@ urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("resources/", ResourcesListAPIView.as_view(), name="resources"),
     path("tags/", TagListAPIView.as_view(), name="tags"),
-    path("sync-resources/", trigger_sync, name="trigger_sync"),
+    path("upload-data/", upload_data),
+]
+
+urlpatterns += [
+    path("sync-page/", serve, kwargs={"path": "sync/sync.html"}),
 ]

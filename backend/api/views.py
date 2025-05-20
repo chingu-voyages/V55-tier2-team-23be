@@ -1,4 +1,9 @@
-from .serializers import RegisterSerializer, LoginSerializer, ResourceSerializer, TagSerializer
+from .serializers import (
+    RegisterSerializer,
+    LoginSerializer,
+    ResourceSerializer,
+    TagSerializer,
+)
 from rest_framework.views import APIView
 from rest_framework.viewsets import generics
 from rest_framework.response import Response
@@ -6,58 +11,46 @@ from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from core.models import Resource, Tag
 import os
-import requests
-from django.http import JsonResponse
-from django.views.decorators.http import require_GET
+from rest_framework.decorators import api_view
 
-@require_GET
-def trigger_sync(request):
-    try:
-        sync_resources_and_tags()
-        return JsonResponse({"status": "success", "message": "Sync completed"})
-    except Exception as e:
-        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
 EXTERNAL_API = os.getenv("EXTERNAL_API")
 EXTERNAL_API_RESOURCES = EXTERNAL_API + "resources/"
 EXTERNAL_API_TAGS = EXTERNAL_API + "tags/"
 
 
-def sync_resources_and_tags():
-    tag_response = requests.get(EXTERNAL_API_TAGS)
-    if tag_response.status_code == 200:
-        tags_data = tag_response.json()
-        for tag in tags_data:
-            Tag.objects.update_or_create(
-                external_id=tag["id"], defaults={"tag": tag["tag"]}
-            )
-            print(tag["tag"])
+@api_view(["POST"])
+def upload_data(request):
+    tags_data = request.data.get("tags", [])
+    resources_data = request.data.get("resources", [])
 
-    resource_response = requests.get(EXTERNAL_API_RESOURCES)
-    print(resource_response.status_code)
-    if resource_response.status_code == 200:
-        resources_data = resource_response.json()
-        for resource in resources_data:
-            resource_obj, created = Resource.objects.update_or_create(
-                external_id=resource["id"],
-                defaults={
-                    "author": resource["author"],
-                    "name": resource["name"],
-                    "url": resource["url"],
-                    "created_at": resource.get("createdAt"),
-                },
-            )
+    for tag in tags_data:
+        Tag.objects.update_or_create(
+            external_id=tag["id"], defaults={"tag": tag["tag"]}
+        )
 
-            tag_ids = resource.get("appliedTags", [])
+    for resource in resources_data:
+        resource_obj, _ = Resource.objects.update_or_create(
+            external_id=resource["id"],
+            defaults={
+                "author": resource["author"],
+                "name": resource["name"],
+                "url": resource["url"],
+                "created_at": resource.get("createdAt"),
+            },
+        )
 
-            tags = Tag.objects.filter(external_id__in=tag_ids)
+        tag_ids = resource.get("appliedTags", [])
+        tags = Tag.objects.filter(external_id__in=tag_ids)
+        resource_obj.tags.set(tags)
 
-            resource_obj.tags.set(tags)
+    return Response({"status": "success"})
 
 
 class ResourcesListAPIView(generics.ListAPIView):
     serializer_class = ResourceSerializer
     queryset = Resource.objects.all()
+
 
 class TagListAPIView(generics.ListAPIView):
     serializer_class = TagSerializer
