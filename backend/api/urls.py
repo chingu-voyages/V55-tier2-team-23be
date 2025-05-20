@@ -4,7 +4,13 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenVerifyView,
 )
-from .views import RegisterAPIView, LoginAPIView, ResourcesListAPIView, trigger_sync
+from .views import (
+    RegisterAPIView,
+    LoginAPIView,
+    ResourcesListAPIView,
+    TagListAPIView,
+    trigger_sync,
+)
 
 urlpatterns = [
     path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain"),
@@ -13,5 +19,6 @@ urlpatterns = [
     path("auth/register/", RegisterAPIView.as_view(), name="register"),
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("resources/", ResourcesListAPIView.as_view(), name="resources"),
+    path("tags/", TagListAPIView.as_view(), name="tags"),
     path("sync-resources/", trigger_sync, name="trigger_sync"),
 ]

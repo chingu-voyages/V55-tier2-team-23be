@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import CustomUser, Resource
+from core.models import CustomUser, Resource, Tag
 from django.contrib.auth import get_user_model, authenticate
 
 User = get_user_model()
@@ -55,4 +55,10 @@ class ResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Resource
+        fields = "__all__"
+
+class TagSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Tag
         fields = "__all__"

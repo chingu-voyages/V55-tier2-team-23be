@@ -1,4 +1,4 @@
-from .serializers import RegisterSerializer, LoginSerializer, ResourceSerializer
+from .serializers import RegisterSerializer, LoginSerializer, ResourceSerializer, TagSerializer
 from rest_framework.views import APIView
 from rest_framework.viewsets import generics
 from rest_framework.response import Response
@@ -58,6 +58,10 @@ def sync_resources_and_tags():
 class ResourcesListAPIView(generics.ListAPIView):
     serializer_class = ResourceSerializer
     queryset = Resource.objects.all()
+
+class TagListAPIView(generics.ListAPIView):
+    serializer_class = TagSerializer
+    queryset = Tag.objects.all()
 
 
 class RegisterAPIView(APIView):
