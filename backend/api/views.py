@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import generics
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
 from core.models import Resource, Tag
 import os
 from rest_framework.decorators import api_view
@@ -134,7 +134,7 @@ class LoginAPIView(APIView):
 class LogoutAPIView(APIView):
 
     def post(self, request, *args, **kwargs):
-        res = Response({"message": "Logged out"},status=status.HTTP_200_OK)
+        res = Response({"message": "Logged out"}, status=status.HTTP_200_OK)
         try:
             refresh_token = request.COOKIES.get("refresh_token")
             if refresh_token:
@@ -147,3 +147,46 @@ class LogoutAPIView(APIView):
         res.delete_cookie("refresh_token", samesite="None")
 
         return res
+
+
+class CheckAuthAPIView(APIView):
+
+    def get(self, request):
+        refresh_token = request.COOKIES.get("refresh_token")
+        access_token = request.COOKIES.get("access_token")
+
+        try:
+            if not access_token:
+                raise TokenError("No access token in cookies!")
+
+            AccessToken(access_token)
+            return Response({"message": "Access token valid"})
+
+        except TokenError:
+            try:
+                if not refresh_token:
+                    raise TokenError("No refresh token in cookies!")
+
+                refresh = RefreshToken(refresh_token)
+                new_access_token = refresh.access_token
+
+                res = Response({"message": "Access token refreshed!"})
+
+                res.set_cookie(
+                    key="access_token",
+                    value=str(new_access_token),
+                    httponly=True,
+                    secure=True,
+                    samesite="None",
+                    max_age=30 * 60,
+                )
+
+                return res
+
+            except TokenError:
+                return Response(
+                    {
+                        "message": "Authentication credentials were not provided or are invalid"
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
