@@ -129,3 +129,21 @@ class LoginAPIView(APIView):
             return res
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutAPIView(APIView):
+
+    def post(self, request, *args, **kwargs):
+        res = Response({"message": "Logged out"},status=status.HTTP_200_OK)
+        try:
+            refresh_token = request.COOKIES.get("refresh_token")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception:
+            pass
+
+        res.delete_cookie("access_token", samesite="None")
+        res.delete_cookie("refresh_token", samesite="None")
+
+        return res
