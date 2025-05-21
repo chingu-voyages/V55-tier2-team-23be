@@ -113,9 +113,9 @@ REST_FRAMEWORK = {
         "core.auth_backends.CookieJWTAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # "DEFAULT_RENDERER_CLASSES": [
-    #     "rest_framework.renderers.JSONRenderer",
-    # ],
+    "DEFAULT_RENDERER_CLASSES": [
+        "rest_framework.renderers.JSONRenderer",
+    ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 500,
 }
