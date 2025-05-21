@@ -12,6 +12,7 @@ from .views import (
     ResourcesListAPIView,
     TagListAPIView,
     upload_data,
+    SyncPageView,
 )
 from django.contrib.staticfiles.views import serve
 
@@ -20,18 +21,16 @@ urlpatterns = [
     path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     path("auth/token/verify/", TokenVerifyView.as_view(), name="token-verify"),
-
     path("auth/register/", RegisterAPIView.as_view(), name="register"),
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("auth/logout/", LogoutAPIView.as_view(), name="logout"),
     path("auth/check-auth/", CheckAuthAPIView.as_view(), name="check-auth"),
-
-
     path("resources/", ResourcesListAPIView.as_view(), name="resources"),
     path("tags/", TagListAPIView.as_view(), name="tags"),
     path("upload-data/", upload_data),
+    path("sync-page/", SyncPageView.as_view(), name="sync-page"),
 ]
 
-urlpatterns += [
-    path("sync-page/", serve, kwargs={"path": "sync/sync.html"}),
-]
+# urlpatterns += [
+#     path("sync-page/", serve, kwargs={"path": "sync/sync.html"}),
+# ]

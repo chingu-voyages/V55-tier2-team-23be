@@ -12,12 +12,16 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenErro
 from core.models import Resource, Tag
 import os
 from rest_framework.decorators import api_view
+from django.shortcuts import render
+from django.views.generic import TemplateView
 
 
 EXTERNAL_API = os.getenv("EXTERNAL_API")
 EXTERNAL_API_RESOURCES = EXTERNAL_API + "resources/"
 EXTERNAL_API_TAGS = EXTERNAL_API + "tags/"
 
+class SyncPageView(TemplateView):
+    template_name = "sync/sync.html"
 
 @api_view(["POST"])
 def upload_data(request):
