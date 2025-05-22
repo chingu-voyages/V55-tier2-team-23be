@@ -13,6 +13,8 @@ from .views import (
     TagListAPIView,
     upload_data,
     SyncPageView,
+    SaveOrUnsaveResourceAPIView,
+    SavedResourcesAPIView
 )
 from django.contrib.staticfiles.views import serve
 
@@ -26,11 +28,10 @@ urlpatterns = [
     path("auth/logout/", LogoutAPIView.as_view(), name="logout"),
     path("auth/check-auth/", CheckAuthAPIView.as_view(), name="check-auth"),
     path("resources/", ResourcesListAPIView.as_view(), name="resources"),
+    path("resource/save/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="save-resource"),
+    path("resource/unsave/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="unsave-resource"),
+    path("resources/saved/", SavedResourcesAPIView.as_view(), name="saved-resource"),
     path("tags/", TagListAPIView.as_view(), name="tags"),
     path("upload-data/", upload_data),
     path("sync-page/", SyncPageView.as_view(), name="sync-page"),
 ]
-
-# urlpatterns += [
-#     path("sync-page/", serve, kwargs={"path": "sync/sync.html"}),
-# ]

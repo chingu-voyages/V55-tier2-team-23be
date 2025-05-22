@@ -9,19 +9,23 @@ from rest_framework.viewsets import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
-from core.models import Resource, Tag
+from core.models import Resource, Tag, UserSavedResource
 import os
 from rest_framework.decorators import api_view
 from django.shortcuts import render
 from django.views.generic import TemplateView
+from django.shortcuts import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 
 
 EXTERNAL_API = os.getenv("EXTERNAL_API")
 EXTERNAL_API_RESOURCES = EXTERNAL_API + "resources/"
 EXTERNAL_API_TAGS = EXTERNAL_API + "tags/"
 
+
 class SyncPageView(TemplateView):
     template_name = "sync/sync.html"
+
 
 @api_view(["POST"])
 def upload_data(request):
@@ -194,3 +198,41 @@ class CheckAuthAPIView(APIView):
                     },
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+
+
+class SaveOrUnsaveResourceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        id = kwargs.get("id")
+        url_path = request.path
+        resource = get_object_or_404(Resource, id=id)
+        user = request.user
+
+        if "unsave" in url_path:
+            UserSavedResource.objects.filter(resource=resource, user=user).delete()
+            return Response(
+                {"message": "Resouce was unsaved succesffully!"},
+                status=status.HTTP_200_OK,
+            )
+
+        UserSavedResource.objects.get_or_create(
+            resource=resource, user=user, is_saved=True
+        )
+
+        return Response(
+            {"message": "Resource was saved successfully!"}, status=status.HTTP_200_OK
+        )
+
+
+class SavedResourcesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        saved_resources = UserSavedResource.objects.filter(user=request.user)
+
+        resources = [saved.resource for saved in saved_resources]
+
+        serializer = ResourceSerializer(resources, many=True)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)
