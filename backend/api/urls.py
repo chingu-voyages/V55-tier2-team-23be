@@ -14,7 +14,8 @@ from .views import (
     upload_data,
     SyncPageView,
     SaveOrUnsaveResourceAPIView,
-    SavedResourcesAPIView
+    SavedResourcesAPIView,
+    GoogleAuthAPIView
 )
 from django.contrib.staticfiles.views import serve
 
@@ -27,6 +28,7 @@ urlpatterns = [
     path("auth/login/", LoginAPIView.as_view(), name="login"),
     path("auth/logout/", LogoutAPIView.as_view(), name="logout"),
     path("auth/check-auth/", CheckAuthAPIView.as_view(), name="check-auth"),
+    path("auth/google/", GoogleAuthAPIView.as_view(), name="google-auth"),
     path("resources/", ResourcesListAPIView.as_view(), name="resources"),
     path("resource/save/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="save-resource"),
     path("resource/unsave/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="unsave-resource"),

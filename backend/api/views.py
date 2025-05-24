@@ -15,12 +15,17 @@ from rest_framework.decorators import api_view
 from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from google.oauth2 import id_token
+from google.auth.transport import requests as google_requests
+from django.contrib.auth import get_user_model
 
 
 EXTERNAL_API = os.getenv("EXTERNAL_API")
 EXTERNAL_API_RESOURCES = EXTERNAL_API + "resources/"
 EXTERNAL_API_TAGS = EXTERNAL_API + "tags/"
+
+User = get_user_model()
 
 
 class SyncPageView(TemplateView):
@@ -236,3 +241,64 @@ class SavedResourcesAPIView(APIView):
         serializer = ResourceSerializer(resources, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class GoogleAuthAPIView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        if not token:
+            return Response(
+                {"message": "Token must be set!"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            CLIEND_ID = os.getenv("GOOGLE_CLIENT_ID")
+            idinfo = id_token.verify_oauth2_token(
+                token, google_requests.Request(), CLIEND_ID
+            )
+            email = idinfo["email"]
+            name = idinfo.get("name", "")
+            picture = idinfo.get("picture")
+
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={"username": name, "email": email},
+            )
+
+            if created:
+                user.set_unusable_password()
+                user.is_active = True
+                user.save()
+
+            refresh = RefreshToken.for_user(user)
+            access = AccessToken.for_user(user)
+
+            res = Response(status=status.HTTP_200_OK)
+
+            res.set_cookie(
+                key="access_token",
+                value=str(access),
+                httponly=True,
+                secure=True,
+                samesite="None",
+                max_age=30 * 60,
+            )
+
+            res.set_cookie(
+                key="refresh_token",
+                value=str(refresh),
+                httponly=True,
+                secure=True,
+                samesite="None",
+                max_age=7 * 24 * 60 * 60,
+            )
+
+            return res
+        except ValueError as e:
+            print(e)
+            return Response(
+                {"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            )
