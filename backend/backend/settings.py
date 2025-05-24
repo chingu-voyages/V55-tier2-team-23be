@@ -114,9 +114,10 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+IS_PRODUCTION = os.getenv("DJANGO_PRODUCTION") == "1"
 
-CSRF_COOKIE_SECURE = True    
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = IS_PRODUCTION
+SESSION_COOKIE_SECURE = IS_PRODUCTION
 CSRF_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SAMESITE = "None"
 
@@ -125,7 +126,6 @@ REST_FRAMEWORK = {
         "core.auth_backends.CookieJWTAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
     ],
