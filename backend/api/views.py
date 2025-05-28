@@ -12,13 +12,13 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenErro
 from core.models import Resource, Tag, UserSavedResource
 import os
 from rest_framework.decorators import api_view
-from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
 from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.views import TokenRefreshView
 
 
 EXTERNAL_API = os.getenv("EXTERNAL_API")
@@ -30,6 +30,62 @@ User = get_user_model()
 
 class SyncPageView(TemplateView):
     template_name = "sync/sync.html"
+
+
+class CustomRefreshTokenView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get("refresh_token")
+
+        if not refresh_token:
+            return Response(
+                {"message": "Refresh token must be set in cookies!"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            refresh = RefreshToken(refresh_token)
+
+            user_id = refresh["user_id"]
+            user = User.objects.get(id=user_id)
+
+            new_refresh = RefreshToken.for_user(user)
+            new_access = new_refresh.access_token
+
+            res = Response(
+                {"message": "Tokens refreshed successfully"},
+                status=status.HTTP_200_OK,
+            )
+
+            res.set_cookie(
+                key="access_token",
+                value=str(new_access),
+                httponly=True,
+                secure=True,
+                samesite="None",
+                max_age=30 * 60,
+            )
+
+            res.set_cookie(
+                key="refresh_token",
+                value=str(new_refresh),
+                httponly=True,
+                secure=True,
+                samesite="None",
+                max_age=7 * 24 * 60 * 60,
+            )
+
+            return res
+
+        except TokenError:
+            return Response(
+                {"message": "Invalid or expired refresh token"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+        except User.DoesNotExist:
+            return Response(
+                {"message": "User not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
 @api_view(["POST"])
@@ -163,6 +219,7 @@ class LogoutAPIView(APIView):
 
 
 class CheckAuthAPIView(APIView):
+    permission_classes = [AllowAny]
 
     def get(self, request):
         refresh_token = request.COOKIES.get("refresh_token")
@@ -172,31 +229,58 @@ class CheckAuthAPIView(APIView):
             if not access_token:
                 raise TokenError("No access token in cookies!")
 
-            AccessToken(access_token)
-            return Response({"message": "Access token valid"})
+            token = AccessToken(access_token)
+            token.verify()
+            return Response(
+                {"message": "Access token valid"}, status=status.HTTP_200_OK
+            )
 
-        except TokenError:
+        except TokenError as e:
             try:
                 if not refresh_token:
                     raise TokenError("No refresh token in cookies!")
 
                 refresh = RefreshToken(refresh_token)
-                new_access_token = refresh.access_token
 
-                res = Response({"message": "Access token refreshed!"})
+                user_id = refresh["user_id"]
+                try:
+                    user = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    raise TokenError("User not found")
+
+                new_refresh = RefreshToken.for_user(user)
+                new_access = new_refresh.access_token
+
+                try:
+                    refresh.blacklist()
+                except Exception as e:
+                    pass
+
+                res = Response(
+                    {"message": "Access token refreshed!"}, status=status.HTTP_200_OK
+                )
 
                 res.set_cookie(
                     key="access_token",
-                    value=str(new_access_token),
+                    value=str(new_access),
                     httponly=True,
                     secure=True,
                     samesite="None",
                     max_age=30 * 60,
                 )
 
+                res.set_cookie(
+                    key="refresh_token",
+                    value=str(new_refresh),
+                    httponly=True,
+                    secure=True,
+                    samesite="None",
+                    max_age=7 * 24 * 60 * 60,
+                )
+
                 return res
 
-            except TokenError:
+            except TokenError as e:
                 return Response(
                     {
                         "message": "Authentication credentials were not provided or are invalid"
@@ -298,7 +382,6 @@ class GoogleAuthAPIView(APIView):
 
             return res
         except ValueError as e:
-            print(e)
             return Response(
                 {"message": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
             )
