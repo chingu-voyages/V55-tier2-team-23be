@@ -9,7 +9,7 @@ from rest_framework.viewsets import generics
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken, TokenError
-from core.models import Resource, Tag, UserSavedResource
+from core.models import Resource, Tag, UserSavedResource, UserRating
 import os
 from rest_framework.decorators import api_view
 from django.views.generic import TemplateView
@@ -325,6 +325,36 @@ class SavedResourcesAPIView(APIView):
         serializer = ResourceSerializer(resources, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+class RateResourceAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        resource_id = kwargs.get("resource_id")
+        rating = request.data.get("rating")
+        user = request.user
+
+        if not rating:
+            return Response({"error": "Rating value is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            resource = Resource.objects.get(id=resource_id)
+        except Resource.DoesNotExist:
+            return Response({"error": "Resource not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        rating_obj, created = UserRating.objects.update_or_create(
+            user=user,
+            resource=resource,
+            defaults={'rating': rating}
+        )
+
+        if created:
+            message = "Rating was successfully created!"
+        else:
+            message = "Rating was successfully updated!"
+
+        return Response({"message": message}, status=status.HTTP_200_OK)
 
 
 class GoogleAuthAPIView(APIView):

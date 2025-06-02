@@ -51,7 +51,7 @@ class ResourceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Resource
-        fields = "__all__"
+        fields = ["id", "tags", "external_id", "author", "name", "url", "created_at", "avg_rating"]
 
 class TagSerializer(serializers.ModelSerializer):
 

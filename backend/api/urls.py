@@ -16,6 +16,7 @@ from .views import (
     SavedResourcesAPIView,
     GoogleAuthAPIView,
     CustomRefreshTokenView,
+    RateResourceAPIView
 )
 from django.contrib.staticfiles.views import serve
 
@@ -33,6 +34,7 @@ urlpatterns = [
     path("resource/save/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="save-resource"),
     path("resource/unsave/<int:id>/", SaveOrUnsaveResourceAPIView.as_view(), name="unsave-resource"),
     path("resources/saved/", SavedResourcesAPIView.as_view(), name="saved-resource"),
+    path("resources/rate/<int:resource_id>/", RateResourceAPIView.as_view(), name="rate-resource"),
     path("tags/", TagListAPIView.as_view(), name="tags"),
     path("upload-data/", upload_data),
     path("sync-page/", SyncPageView.as_view(), name="sync-page"),

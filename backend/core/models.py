@@ -6,6 +6,7 @@ from django.contrib.auth.models import (
 )
 from backend.settings import AUTH_USER_MODEL
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models import Avg
 
 
 class CustomUserManager(BaseUserManager):
@@ -68,6 +69,16 @@ class Resource(models.Model):
 
     def __str__(self):
         return f"{self.author} - {self.name}"
+    
+    @property
+    def avg_rating(self):
+        return self.userrating_set.aggregate(avg=Avg('rating'))["avg"] or 0
+    
+    @property
+    def ratings_count(self):
+        return self.userrating_set.count()
+    
+
 
 
 class UserRating(models.Model):
